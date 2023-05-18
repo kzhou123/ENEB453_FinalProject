@@ -9,6 +9,11 @@ import LadderContainer from './components/LadderContainer';
 import Snake from './components/Snake';
 import Player from './components/Player';
 
+//TODO1_audio
+import soundwin from './SnakesAndLadder_winharpsichord.mp3'
+import sounddice from './SnakesAndLadderrolling.mp3'
+//TODO1_audio
+
 const { ipcRenderer } = window.require('electron');
 // const remote = electron.remote
 // const {dialog} = remote
@@ -19,32 +24,65 @@ function App() {
     gameboard: Helper.generateGameboard(),
     snakes: Helper.generateSnakes(2),
     ladders: Helper.generateLadders(1),
-    players:  Helper.generatePlayers(1),
-    dice: null
+    players:  Helper.generatePlayers(2),
+    dice: null,
+    dice1:null
   });
 
   useEffect(() => {
     ipcRenderer.on('toReact', (event, data) => {
-      setState(previous => {
-        return ({...previous, dice: +data.move});
-      });
+      // setState(previous => {
+      //   return ({...previous, dice1: +data.move});
+      // });
+
+      if( +data.move > 0 && +data.move < 7){
+        setState(previous => {
+          return ({...previous, dice1: +data.move});
+       });
+      //  setTimeout(() => {
+      //   movePlayer1();
+      // }, 2000);
+      }
+
+
     });
   
   }, []);
  
- 
+  //TODO2_audio
+  let audiodice = new Audio(sounddice)
+  let audiowin = new Audio(soundwin)
+  const startmusicwin = () => {
+    audiowin.play();
+  }
+  const startmusicdice = () => {
+    audiodice.play();
+  }
+  //TODO2_audio
+
   const gameRollDice = () => {
+    //TODO3_audio
+    startmusicdice();
+    //TODO3_audio
     setState(previous => ({...previous, dice: Math.floor((Math.random() * 6) + 1)}));
   }
 
+  const gameRollDice1 = () => {
+    //TODO3_audio
+    startmusicdice();
+    //TODO3_audio
+    setState(previous => ({...previous, dice1: Math.floor((Math.random() * 6) + 1)}));
+  }
+
   const movePlayer =() => {
-    
+
     let data = {
 			id: state.players[0].id,
 			moves: state.dice,
 			tile: state.players[0].tile,
 			index: state.players[0].index,
 		};
+
     playerUpdatePosition(data);
     setTimeout((data) => {
       setState(previous => ({...previous, dice: null}));
@@ -52,122 +90,235 @@ function App() {
    
   }
 
+  const movePlayer1 =() => {
 
-async function playerUpdatePosition( data ) {
-	const updated_data = Helper.calculatePlayerNewPosition( data );
-	let previous_player_data = Helper.getLastCalculatedPlayerPosition();
-  let perfect_throws = Helper.calculatePerfectThrowsFromPosition( previous_player_data.index );
-  if( previous_player_data.index === 100 ) {
-  
-    ipcRenderer.send('fromReact', {message: 'hello Player 1 win'});
-    setTimeout(function() {
-      playerUpdatePosition({ id: data.id, index: 100, moves: 1-100 });
-    }, 400);
+    let data1 = {
+      id: state.players[1].id,
+      moves: state.dice1,
+      tile: state.players[1].tile,
+      index: state.players[1].index,
+    };
+    playerUpdatePosition1(data1);
+
+    setTimeout((data1) => {
+      setState(previous => ({...previous, dice1: null}));
+    },100)
+
   }
-  const players = state.players.map((player) => {
-    if(player.id === data.id) {
-      player = {...player, ...updated_data};
+
+  async function playerUpdatePosition( data ) {
+    const updated_data = Helper.calculatePlayerNewPosition( data );
+    let previous_player_data = Helper.getLastCalculatedPlayerPosition();
+    let perfect_throws = Helper.calculatePerfectThrowsFromPosition( previous_player_data.index );
+    ipcRenderer.send('fromReactPosition', {message: 'Player '+ data.id +' position is ' + previous_player_data.index});  
+    //TODO4_MONGODB
+    if( previous_player_data.index === 100 ) {
+      //TODO4_audio
+      startmusicwin();
+      //TODO4_audio
+      ipcRenderer.send('fromReact', {message: 'Congratulation ' + 'Player '+ data.id});
+      setTimeout(function() {
+        playerUpdatePosition({ id: data.id, index: state.players[0].index, moves: 1-state.players[0].index });
+      }, 400);
+
+      setTimeout(function() {
+        playerUpdatePosition1({ id: state.players[1].id, index: state.players[1].index, moves: 1-state.players[1].index });
+      }, 5000);
+      
     }
-    return player;
-  });
-  setState((prev) => ({...prev, players: players}));
-  let stats_ladder_count = 0;
-		let stats_snake_count = 0;
-    let ladders = state.ladders;
-    for(let i =0; i < ladders.length; i++) {
-      if(ladders[i].from === updated_data.index) {
-        setTimeout(function() {
-					playerUpdatePosition({ id: data.id, index: updated_data.index, moves: ladders[i].to-ladders[i].from });
-				}, 400);
+    const players = state.players.map((player) => {
+      if(player.id === data.id) {
+        player = {...player, ...updated_data};
       }
-    }
-
-		let snakes = state.snakes;
-		for(let i =0; i < snakes.length; i++) {
-      if(snakes[i].from === updated_data.index) {
-        setTimeout(function() {
-					playerUpdatePosition({ id: data.id, index: updated_data.index, moves: snakes[i].to-snakes[i].from });
-				}, 400);
+      return player;
+    });
+    setState((prev) => ({...prev, players: players}));
+    let stats_ladder_count = 0;
+      let stats_snake_count = 0;
+      let ladders = state.ladders;
+      for(let i =0; i < ladders.length; i++) {
+        if(ladders[i].from === updated_data.index) {
+          setTimeout(function() {
+            playerUpdatePosition({ id: data.id, index: updated_data.index, moves: ladders[i].to-ladders[i].from });
+          }, 400);
+        }
       }
+  
+      let snakes = state.snakes;
+      for(let i =0; i < snakes.length; i++) {
+        if(snakes[i].from === updated_data.index) {
+          setTimeout(function() {
+            playerUpdatePosition({ id: data.id, index: updated_data.index, moves: snakes[i].to-snakes[i].from });
+          }, 400);
+        }
+      }
+  }
+
+
+  async function playerUpdatePosition1( data1) {
+    const updated_data = Helper.calculatePlayerNewPosition( data1 );
+    let previous_player_data = Helper.getLastCalculatedPlayerPosition();
+    let perfect_throws = Helper.calculatePerfectThrowsFromPosition( previous_player_data.index );
+    ipcRenderer.send('fromReactPosition', {message: 'Player '+ data1.id +' position is ' + previous_player_data.index});  
+    //TODO4_MONGODB
+    if( previous_player_data.index === 100 ) {
+      //TODO4_audio
+      startmusicwin();
+      //TODO4_audio
+      ipcRenderer.send('fromReact', {message: 'Congratulation' + 'Player '+ data1.id});
+      // setTimeout(function() {
+      //   playerUpdatePosition({ id: state.players[0].id, index: state.players[0].index, moves: 1-state.players[0].index });
+      //   playerUpdatePosition1({ id: data1.id, index: 100, moves: 1-100 });
+      // }, 400);
+      setState({
+        gameboard: Helper.generateGameboard(),
+        snakes: Helper.generateSnakes(2),
+        ladders: Helper.generateLadders(1),
+        players:  Helper.generatePlayers(2).map((player) => { return {...player, index: 1} }),
+        dice: null,
+        dice1:null
+      });
+      // setState((prev) => ({...prev, players: Helper.generatePlayers(2)}));
+      
     }
-}
-
-  let player_dashboard = (
-		<div>
-			<div className="player-info">
-				<p>Current Player</p>
-				<p className="name">{state.players[0].name}</p>
-				{/* <div className="moves-to-win">
-					You are <strong>5</strong> moves away from a perfect win.
-				</div> */}
-			</div>
-
-			<div className="dice">
-				<div className="number">
-        {/* <span>&#8995;</span> */}
-					{ state.dice ?
-						<span>{ state.dice }</span> : <span>&#8995;</span>
-					}
-				</div>
-			</div>
-
-			<div className="m-t-20">
-      {/* <button className="full green">Move</button> */}
-				{ state.dice ?
-					<button className="full green" onClick={ movePlayer }>Move</button>
-					:
-					<button className="full blue" onClick={ gameRollDice }>Roll</button>
-				}
-			</div>
-		</div>
-	);
-  return (
-   
+    const players = state.players.map((player) => {
+      if(player.id === data1.id) {
+        player = {...player, ...updated_data};
+      }
+      return player;
+    });
+    setState((prev) => ({...prev, players: players}));
+    let stats_ladder_count = 0;
+      let stats_snake_count = 0;
+      let ladders = state.ladders;
+      for(let i =0; i < ladders.length; i++) {
+        if(ladders[i].from === updated_data.index) {
+          setTimeout(function() {
+            playerUpdatePosition1({ id: data1.id, index: updated_data.index, moves: ladders[i].to-ladders[i].from });
+          }, 400);
+        }
+      }
+  
+      let snakes = state.snakes;
+      for(let i =0; i < snakes.length; i++) {
+        if(snakes[i].from === updated_data.index) {
+          setTimeout(function() {
+            playerUpdatePosition1({ id: data1.id, index: updated_data.index, moves: snakes[i].to-snakes[i].from });
+          }, 400);
+        }
+      }
+  }
+  
+    let player_dashboard = (
       <div>
-        <aside id="main">
-			    <h2>Control Panel</h2>
-            { 
-              player_dashboard
+        <div>
+          <div className="player-info">
+            <p>Current Player</p>
+            <p className="name">{state.players[0].name}</p>
+            {/* <div className="moves-to-win">
+              You are <strong>5</strong> moves away from a perfect win.
+            </div> */}
+          </div>
+  
+          <div className="dice">
+            <div className="number">
+            {/* <span>&#8995;</span> */}
+              { state.dice ?
+                <span>{ state.dice }</span> : <span>&#8995;</span>
+              }
+            </div>
+          </div>
+  
+          <div className="m-t-20">
+          {/* <button className="full green">Move</button> */}
+            { state.dice ?
+              <button className="full green" onClick={ movePlayer }>Move</button>
+              :
+              <button className="full blue" onClick={ gameRollDice }>Roll</button>
             }
-		    </aside>
-            <header id="main">
-              <h1>Snakes &amp; Ladders</h1>
-              </header>
-            <div className="gameboard-container">
-              <div id="gameboard" className="gameboard flex row">
-                { state.gameboard.map( tile => {
-                    return(
-                      <Tile key={ tile.id } data={tile} />
-                    )
-                  })
-                }
-              </div>
-                {	<LadderContainer ladders={state.ladders} />
-              }
+          </div>
 
-              { state.snakes.length> 0 &&
-                        <div className="snakes">
-                          { state.snakes.map( snake => {
-                              return <Snake key={ 'snake_' + snake.id } data={ snake } />
-                            })
-                          }
-                        </div>
+        </div>
+        <div>
+          <div className="player-info">
+            <p>Current Player</p>
+            <p className="name">{"Player2"}</p>
+            {/* <div className="moves-to-win">
+              You are <strong>5</strong> moves away from a perfect win.
+            </div> */}
+          </div>
+  
+          <div className="dice">
+            <div className="number">
+            {/* <span>&#8995;</span> */}
+              { state.dice1 ?
+                <span>{ state.dice1 }</span> : <span>&#8995;</span>
               }
-              { state.players.length > 0 && 
-                <div className="players">
-                  { state.players.map( player => {
+            </div>
+          </div>
+  
+          <div className="m-t-20">
+          {/* <button className="full green">Move</button> */}
+            { state.dice1 ?
+            
+              <button className="full green" onClick={ movePlayer1 }>Move</button>
+              :
+              <button className="full blue" onClick={ gameRollDice1 }>Roll</button>
+            }
+          </div>
+        </div>
+  
+      </div>
+        //////
+      
+    );
+    return (
+     
+        <div>
+          <aside id="main">
+            <h2>Control Panel</h2>
+              { 
+                player_dashboard
+              }
+          </aside>
+              <header id="main">
+                <h1>Snakes &amp; Ladders</h1>
+                </header>
+              <div className="gameboard-container">
+                <div id="gameboard" className="gameboard flex row">
+                  { state.gameboard.map( tile => {
                       return(
-                        <Player key={ 'player_' + player.id } data={ player } />
+                        <Tile key={ tile.id } data={tile} />
                       )
                     })
                   }
                 </div>
-              }
-            </div>
+                  {	<LadderContainer ladders={state.ladders} />
+                }
+  
+                { state.snakes.length> 0 &&
+                          <div className="snakes">
+                            { state.snakes.map( snake => {
+                                return <Snake key={ 'snake_' + snake.id } data={ snake } />
+                              })
+                            }
+                          </div>
+                }
+                { state.players.length > 0 && 
+                  <div className="players">
+                    { state.players.map( player => {
+                        return(
+                          <Player key={ 'player_' + player.id } data={ player } />
+                        )
+                      })
+                    }
+                  </div>
+                }
+              </div>
           </div>
-		
-    );
+      
+      );
 }
-
-
-export default App;
+  
+  
+  export default App;

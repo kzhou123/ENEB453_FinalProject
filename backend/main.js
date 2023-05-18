@@ -87,6 +87,7 @@ app.on('window-all-closed', () => {
 
 ipcMain.on('fromReact', (event, messageData) => {
   const newData = new GenericModel(messageData);
+  console.log(newData);
    // Save the data object to MongoDB
    newData.save()
    .then(() => {
@@ -95,7 +96,20 @@ ipcMain.on('fromReact', (event, messageData) => {
    .catch((error) => {
      console.error('Failed to save data:', error);
    });
-  dialog.showErrorBox('ENEB453', messageData.message);
+    dialog.showErrorBox('ENEB453', messageData.message);
+});
+
+ipcMain.on('fromReactPosition', (event, messageData) => {
+  const newData = new GenericModel(messageData);
+   // Save the data object to MongoDB
+   newData.save()
+   .then(() => {
+     console.log('Data saved successfully');
+   })
+   .catch((error) => {
+     console.error('Failed to save data:', error);
+   });
+  //dialog.showErrorBox('ENEB453', messageData.message);
 });
 
 
@@ -147,4 +161,6 @@ ipcMain.on('fromBle', (data, event) => {
   for (const window of rendererWindows) {
     window.webContents.send('toReact', data);
   }
+  console.log(typeof(data));
+
 });
