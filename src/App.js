@@ -166,18 +166,10 @@ function App() {
       startmusicwin();
       //TODO4_audio
       ipcRenderer.send('fromReact', {message: 'Congratulation' + 'Player '+ data1.id});
-      // setTimeout(function() {
-      //   playerUpdatePosition({ id: state.players[0].id, index: state.players[0].index, moves: 1-state.players[0].index });
-      //   playerUpdatePosition1({ id: data1.id, index: 100, moves: 1-100 });
-      // }, 400);
-      setState({
-        gameboard: Helper.generateGameboard(),
-        snakes: Helper.generateSnakes(2),
-        ladders: Helper.generateLadders(1),
-        players:  Helper.generatePlayers(2).map((player) => { return {...player, index: 1} }),
-        dice: null,
-        dice1:null
-      });
+      setTimeout(function() {
+        playerUpdatePosition({ id: state.players[0].id, index: state.players[0].index, moves: 1-state.players[0].index });
+        playerUpdatePosition1({ id: data1.id, index: 100, moves: 1-100 });
+      }, 400);
       // setState((prev) => ({...prev, players: Helper.generatePlayers(2)}));
       
     }
