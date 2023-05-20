@@ -62,7 +62,7 @@ a. Create a public repository and push your final project in that.\
       &nbsp;2. To remove any existing remote use this:\
          &nbsp;&nbsp;&nbsp;a. git remote remove origin\
       &nbsp;3. Run the command to push code to the desired GitHub repository.\
-         &nbsp;&nbsp;&nbsp;a. echo "# repository name >> README.md\
+         &nbsp;&nbsp;&nbsp;a. echo "# repository name >> ENEB453_Final Project_documentation.md\
          &nbsp;&nbsp;&nbsp;b. git init\
          &nbsp;&nbsp;&nbsp;c. git add .\
          &nbsp;&nbsp;&nbsp;d. git commit -m "first commit"\
